@@ -15,18 +15,28 @@ With Intlayer, you can:
 - **Benefit from advanced features**, like dynamic locale detection and switching.
 
 ## Documentation
+
 Documentation reference can be retrieved at [https://intlayer.org/doc](https://intlayer.org/doc).
 The official website is [https://intlayer.org/](https://intlayer.org/). Official repo is [https://github.com/aymericzip/intlayer](https://github.com/aymericzip/intlayer)
 
 ## Installation and Update
+
 To install or update skills, the Intlayer CLI provides the following command:
 
 ```bash
 npx intlayer init skills
 ```
 
+Or using Vercel Skill SDK
+
+```bash
+npx skills add https://github.com/aymericzip/intlayer-skills --skill intlayer-skills
+```
+
 ## Available Skills
+
 The following skills can be installed:
+
 - intlayer_angular
 - intlayer_astro
 - intlayer_cli

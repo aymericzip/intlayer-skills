@@ -30,7 +30,7 @@ npx intlayer init skills
 Or using Vercel Skill SDK
 
 ```bash
-npx skills add https://github.com/aymericzip/intlayer-skills --skill intlayer-skills
+npx skills add aymericzip/intlayer-skills
 ```
 
 ## Available Skills

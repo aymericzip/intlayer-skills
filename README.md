@@ -44,8 +44,10 @@ The following skills can be installed:
 - intlayer_content
 - intlayer_next_js
 - intlayer_react
-- intlayer_remote_content
+- intlayer_preact
+- intlayer_solid
 - intlayer_svelte
+- intlayer_remote_content
 - intlayer_usage
 - intlayer_vue
 

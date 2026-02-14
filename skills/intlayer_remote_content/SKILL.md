@@ -1,5 +1,5 @@
 ---
-name: RemoteContent
+name: Intlayer RemoteContent
 description: How to use Intlayer with Remote/CMS/Server-side content
 ---
 

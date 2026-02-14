@@ -9,6 +9,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "intlayer-cli": "^8.1.0"
+    "intlayer-cli": "^8.1.1"
   }
 }

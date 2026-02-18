@@ -12,6 +12,7 @@ slugs:
   - doc
   - packages
   - astro-intlayer
+  - exports
 history:
   - version: 8.0.0
     date: 2026-01-21
@@ -31,6 +32,22 @@ npm install astro-intlayer
 ## Exports
 
 ### Integration
+
+The `astro-intlayer` package provides an Astro integration to set up Intlayer in your project.
+
+Import:
+
+```tsx
+import "astro-intlayer";
+```
+
+or adding to `astro.config.mjs`:
+
+```ts
+export default defineConfig({
+  integrations: [intlayer()],
+});
+```
 
 | Function   | Description                                              |
 | ---------- | -------------------------------------------------------- |

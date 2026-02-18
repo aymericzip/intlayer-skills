@@ -2,22 +2,21 @@
 name: intlayer-astro
 description: Integrates Intlayer internationalization with Astro applications. Use when the user asks to "setup Astro i18n", use "getIntlayer" in Astro components, or manage server-side content in Astro.
 metadata:
- author: Intlayer
- url: https://intlayer.org
- license: Apache-2.0
- mcp-server: @intlayer/mcp
- category: productivity
- tags: [i18n]
- documentation: https://intlayer.org/doc
- support: contact@intlayer.org
- version: 8.1.2
+  author: Intlayer
+  url: https://intlayer.org
+  license: Apache-2.0
+  mcp-server: "@intlayer/mcp"
+  category: productivity
+  tags: [i18n]
+  documentation: https://intlayer.org/doc
+  support: contact@intlayer.org
 ---
 
 # Intlayer Astro Usage
 
 ## Setup
 
-- [Astro](https://intlayer.org/doc/environment/astro.md)
+- [Astro](references/environment_astro.md)
 
 ## Server-side (Astro Components)
 
@@ -30,3 +29,9 @@ const content = await getIntlayer("my-dictionary-key");
 ```
 
 [Astro Documentation](https://intlayer.org/doc/packages/astro-intlayer.md)
+
+## References
+
+- [Astro](references/environment_astro.md)
+- [Intlayer Exports](references/packages_intlayer_exports.md)
+- [Astro Intlayer Exports](references/packages_astro-intlayer_exports.md)

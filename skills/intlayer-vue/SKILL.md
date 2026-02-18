@@ -2,23 +2,22 @@
 name: intlayer-vue
 description: Integrates Intlayer internationalization with Vue.js and Nuxt applications. Use when the user asks to "setup Vue i18n", use the "useIntlayer" composable, or manage translations in Vue components.
 metadata:
- author: Intlayer
- url: https://intlayer.org
- license: Apache-2.0
- mcp-server: @intlayer/mcp
- category: productivity
- tags: [i18n]
- documentation: https://intlayer.org/doc
- support: contact@intlayer.org
- version: 8.1.2
+  author: Intlayer
+  url: https://intlayer.org
+  license: Apache-2.0
+  mcp-server: "@intlayer/mcp"
+  category: productivity
+  tags: [i18n]
+  documentation: https://intlayer.org/doc
+  support: contact@intlayer.org
 ---
 
 # Intlayer Vue Usage
 
 ## Setup
 
-- [Vite and Vue](https://intlayer.org/doc/environment/vite-and-vue.md)
-- [Nuxt and Vue](https://intlayer.org/doc/environment/nuxt-and-vue.md)
+- [Vite and Vue](references/environment_vite-and-vue.md)
+- [Nuxt and Vue](references/environment_nuxt-and-vue.md)
 
 ## useIntlayer Composable
 
@@ -44,4 +43,11 @@ console.log(content.title.raw); // Render as raw
 </template>
 ```
 
-[Vue Documentation](https://intlayer.org/doc/packages/vue-intlayer.md)
+[Vue Documentation](references/packages_vue-intlayer_exports.md)
+
+## References
+
+- [Vite and Vue](references/environment_vite-and-vue.md)
+- [Nuxt and Vue](references/environment_nuxt-and-vue.md)
+- [Vue Intlayer Exports](references/packages_vue-intlayer_exports.md)
+- [Intlayer Exports](references/packages_intlayer_exports.md)

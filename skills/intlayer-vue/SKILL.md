@@ -47,6 +47,9 @@ console.log(content.title.raw); // Render as raw
 
 ## References
 
+- [Website](https://intlayer.org)
+- [Doc](https://intlayer.org/doc)
+
 - [Vite and Vue](references/environment_vite-and-vue.md)
 - [Nuxt and Vue](references/environment_nuxt-and-vue.md)
 - [Vue Intlayer Exports](references/packages_vue-intlayer_exports.md)

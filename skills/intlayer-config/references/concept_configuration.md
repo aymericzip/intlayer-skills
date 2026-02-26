@@ -14,6 +14,9 @@ slugs:
   - concept
   - configuration
 history:
+  - version: 8.1.5
+    date: 2026-02-23
+    changes: Add compiler option 'build-only', and dictionary prefix
   - version: 8.0.6
     date: 2026-02-12
     changes: Add support for Open Router, Alibaba, Amazon, Google Vertex Bedrock, Fireworks, Groq, Hugging Face, and Together.ai providers
@@ -109,6 +112,7 @@ Intlayer accepts JSON, JS, MJS, and TS configuration file formats:
 
 ```typescript fileName="intlayer.config.ts" codeFormat="typescript"
 import { Locales, type IntlayerConfig } from "intlayer";
+import { nextjsRewrite } from "intlayer/routing";
 import { z } from "zod";
 
 /**
@@ -215,12 +219,12 @@ const config: IntlayerConfig = {
     /**
      * Custom URL rewriting rules for locale-specific paths.
      */
-    rewrite: {
-      "/about": {
-        en: "/about",
-        fr: "/a-propos",
+    rewrite: nextjsRewrite({
+      "/[locale]/about": {
+        en: "/[locale]/about",
+        fr: "/[locale]/a-propos",
       },
-    },
+    }),
   },
 
   /**
@@ -377,6 +381,12 @@ const config: IntlayerConfig = {
      * Default: ['esm', 'cjs']
      */
     outputFormat: ["esm"],
+
+    /**
+     * Indicates if the build should check TypeScript types.
+     * Default: false
+     */
+    checkTypes: false,
   },
 
   /**
@@ -445,13 +455,17 @@ const config: IntlayerConfig = {
   compiler: {
     /**
      * Indicates if the compiler should be enabled.
+     * Set to 'build-only' to skip the compiler during development and speed up start times.
      */
     enabled: true,
 
     /**
      * Pattern to traverse the code to optimize.
      */
-    transformPattern: ["**/*.{js,ts,mjs,cjs,jsx,tsx}", "!**/node_modules/**"],
+    transformPattern: [
+      "**/*.{js,ts,mjs,cjs,jsx,tsx,vue,svelte}",
+      "!**/node_modules/**",
+    ],
 
     /**
      * Pattern to exclude from the optimization.
@@ -461,7 +475,12 @@ const config: IntlayerConfig = {
     /**
      * Output directory for the optimized dictionaries.
      */
-    outputDir: "compiler",
+    outputDir: "i18n",
+
+    /**
+     * Dictionary key prefix
+     */
+    dictionaryKeyPrefix: "", // Remove base prefix
   },
 
   /**
@@ -682,7 +701,7 @@ Settings that control routing behavior, including URL structure, locale storage,
     ```typescript
     routing: {
       mode: "prefix-no-default", // Fallback strategy
-      rewrite: {
+      rewrite: nextjsRewrite({
         "/about": {
           en: "/about",
           fr: "/a-propos",
@@ -695,13 +714,14 @@ Settings that control routing behavior, including URL structure, locale storage,
           en: "/blog/[category]/[id]",
           fr: "/journal/[category]/[id]",
         },
-      },
+      }),
     }
     ```
   - _Note_: The rewrite rules take precedence over the default `mode` behavior. If a path matches a rewrite rule, the localized path from the rewrite configuration will be used instead of the standard locale prefixing.
   - _Note_: Dynamic route parameters are supported using bracket notation (e.g., `[slug]`, `[id]`). The parameter values are automatically extracted from the URL and interpolated into the rewritten path.
   - _Note_: Works with both Next.js and Vite applications. The middleware/proxy will automatically rewrite incoming requests to match the internal route structure.
   - _Note_: When generating URLs with `getLocalizedUrl()`, the rewrite rules are automatically applied if they match the provided path.
+  - _Reference_: For more information, see [Custom URL Rewrites](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/custom_url_rewrites.md).
 
 #### Cookie Attributes
 
@@ -817,6 +837,8 @@ export default defineConfig({
 
 ```typescript
 // intlayer.config.ts
+import { nextjsRewrite } from "intlayer/routing";
+
 export default defineConfig({
   internationalization: {
     locales: ["en", "fr"],
@@ -825,7 +847,7 @@ export default defineConfig({
   routing: {
     mode: "prefix-no-default", // Fallback for non-rewritten paths
     storage: "cookie",
-    rewrite: {
+    rewrite: nextjsRewrite({
       "/about": {
         en: "/about",
         fr: "/a-propos",
@@ -838,7 +860,7 @@ export default defineConfig({
         en: "/blog/[category]/[id]",
         fr: "/journal/[category]/[id]",
       },
-    },
+    }),
   },
 });
 ```
@@ -1148,6 +1170,12 @@ Build options apply to the `@intlayer/babel` and `@intlayer/swc` plugins.
   - _Note_: Fetch mode will use the live sync API to fetch the dictionaries. If the API call fails, the dictionaries will be imported dynamically as "dynamic" mode.
   - _Note_: This option will not impact the `getIntlayer`, `getDictionary`, `useDictionary`, `useDictionaryAsync` and `useDictionaryDynamic` functions.
   - _Note_: **Deprecated**: Use `dictionary.importMode` instead.
+- **checkTypes**:
+  - _Type_: `boolean`
+  - _Default_: `false`
+  - _Description_: Indicates if the build should check TypeScript types and log errors.
+  - _Note_: This can slow down the build.
+
 - **outputFormat**:
   - _Type_: `'esm' | 'cjs'`
   - _Default_: `'esm'`
@@ -1163,3 +1191,43 @@ Build options apply to the `@intlayer/babel` and `@intlayer/swc` plugins.
   - _Note_: Use this to limit optimization to relevant code files and improve build performance.
   - _Note_: This option will be ignored if `optimize` is disabled.
   - _Note_: Use glob pattern.
+
+---
+
+### Compiler Configuration
+
+Settings that control the Intlayer compiler, which extracts dictionaries straight from your components.
+
+#### Properties
+
+- **enabled**:
+  - _Type_: `boolean | 'build-only'`
+  - _Default_: `true`
+  - _Description_: Indicates if the compiler should be enabled to extract the dictionaries.
+  - _Example_: `'build-only'`
+  - _Note_: Setting it to `'build-only'` will skip the compiler during development mode to speed up build times. It will only run on build commands.
+
+- **dictionaryKeyPrefix**:
+  - _Type_: `string`
+  - _Default_: `'comp-'`
+  - _Description_: Prefix for the extracted dictionary keys.
+  - _Example_: `'my-key-'`
+  - _Note_: When dictionaries are extracted, the key is generated based on the file name. This prefix is added to the generated key to prevent conflicts.
+
+- **transformPattern**:
+  - _Type_: `string | string[]`
+  - _Default_: `['**/*.{ts,tsx,jsx,js,cjs,mjs,svelte,vue}', '!**/node_modules/**']`
+  - _Description_: Patterns that define which files should be traversed during optimization.
+  - _Example_: `['src/**/*.{ts,tsx}', '!**/node_modules/**']`
+  - _Note_: Use this to limit optimization to relevant code files and improve build performance.
+
+- **excludePattern**:
+  - _Type_: `string | string[]`
+  - _Default_: `['**/node_modules/**']`
+  - _Description_: Patterns that define which files should be excluded during optimization.
+  - _Example_: `['**/node_modules/**', '!**/node_modules/react/**']`
+
+- **outputDir**:
+  - _Type_: `string`
+  - _Default_: `'compiler'`
+  - _Description_: The directory where the extracted dictionaries will be stored, relative to your project base path.

@@ -50,7 +50,7 @@ export default content;
 
 ## Setup
 
-- [Vite and Preact](https://intlayer.org/doc/environment/vite-and-preact.md)
+- [Vite and Preact](references/environment_vite-and-preact.md)
 
 ## useIntlayer Hook
 
@@ -78,6 +78,6 @@ const MyComponent = () => {
 - [Website](https://intlayer.org)
 - [Doc](https://intlayer.org/doc)
 
-- [Vite and Preact](https://intlayer.org/doc/environment/vite-and-preact.md)
-- [Intlayer Exports](https://intlayer.org/doc/packages/intlayer/exports.md)
-- [Preact Intlayer Exports](https://intlayer.org/doc/packages/preact-intlayer/exports.md)
+- [Vite and Preact](references/environment_vite-and-preact.md)
+- [Intlayer Exports](references/packages_intlayer_exports.md)
+- [Preact Intlayer Exports](references/packages_preact-intlayer_exports.md)

@@ -36,10 +36,9 @@ To use Intlayer effectively:
 
 ## References
 
-- [Website](https://intlayer.org)
-- [Doc](https://intlayer.org/doc)
-
 - [Get Started](references/get-started.md)
 - [How Intlayer Works](references/concept_how-works-intlayer.md)
 - [Why Intlayer](references/why.md)
 - [Per-locale File](references/concept_per-locale-file.md)
+- [Website](https://intlayer.org)
+- [Doc](https://intlayer.org/doc)

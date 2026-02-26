@@ -286,7 +286,7 @@ const content = {
       fallback: "my content when gender is not specified", // Optional but avoid undefined type
     }),
     myInsertion: insert(
-      "Hello, my name is {{name}} and I am {{age}} years old!",
+      "Hello, my name is {{name}} and I am {{age}} years old!"
     ),
     myMultilingualInsertion: insert(
       t({
@@ -294,7 +294,7 @@ const content = {
         de: "Hallo, mein Name ist {{name}} und ich bin {{age}} Jahre alt!",
         en: "Hello, my name is {{name}} and I am {{age}} years old!",
         "en-GB": "Hello, my name is {{name}} and I am {{age}} years old!",
-      }),
+      })
     ),
     myTextFile: file("./test.txt"), // File helps to know where is located the file
     subContent: {

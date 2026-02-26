@@ -37,18 +37,19 @@ npx skills add aymericzip/intlayer-skills
 
 The following skills can be installed:
 
-- intlayer_angular
-- intlayer_astro
-- intlayer_cli
-- intlayer_config
-- intlayer_content
-- intlayer_next_js
-- intlayer_react
-- intlayer_preact
-- intlayer_solid
-- intlayer_svelte
-- intlayer_remote_content
-- intlayer_usage
-- intlayer_vue
+- intlayer-angular
+- intlayer-astro
+- intlayer-cli
+- intlayer-config
+- intlayer-content
+- intlayer-next-js
+- intlayer-react
+- intlayer-preact
+- intlayer-solid
+- intlayer-svelte
+- intlayer-remote-content
+- intlayer-usage
+- intlayer-vue
+- intlayer-compiler
 
 You can remove the skills that are not related to your project to keep your environment clean.

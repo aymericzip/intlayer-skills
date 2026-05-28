@@ -1,13 +1,24 @@
 {
-  "name": "intlayer-skills",
-  "version": "1.0.0",
+  "name": "@intlayer/skills",
+  "version": "8.11.1",
   "main": "index.js",
+  "private": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Agent skills for the Intlayer internationalization ecosystem",
+  "keywords": [
+    "tanstack-intent",
+    "astro",
+    "astro-integration",
+    "react",
+    "vue",
+    "svelte",
+    "solidjs",
+    "angular"
+  ],
   "dependencies": {
     "intlayer-cli": "latest"
   }

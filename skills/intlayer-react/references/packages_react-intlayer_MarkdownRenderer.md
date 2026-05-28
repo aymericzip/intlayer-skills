@@ -18,7 +18,7 @@ slugs:
 history:
   - version: 7.5.14
     date: 2026-01-21
-    changes: Init doc
+    changes: "Init doc"
 ---
 
 # MarkdownRenderer Component Documentation
@@ -28,7 +28,7 @@ The `MarkdownRenderer` component renders markdown content with custom components
 ## Usage
 
 ```tsx
-import { MarkdownRenderer } from "react-intlayer";
+import { MarkdownRenderer } from "react-intlayer/markdown";
 
 const MyComponent = () => (
   <MarkdownRenderer># My Title My content</MarkdownRenderer>

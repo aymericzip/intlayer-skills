@@ -1,7 +1,7 @@
 ---
 createdAt: 2025-04-18
-updatedAt: 2025-12-30
-title: Angular i18n - How to translate your Angular app – guide 2026
+updatedAt: 2026-05-06
+title: Angular i18n - How to translate an Angular 21 app (Vite) in 2026
 description: Discover how to make your Angular website multilingual. Follow the documentation to internationalize (i18n) and translate it.
 keywords:
   - Internationalization
@@ -13,20 +13,24 @@ slugs:
   - doc
   - environment
   - angular
-applicationTemplate: https://github.com/aymericzip/intlayer-angular-template
+applicationTemplate: https://github.com/aymericzip/intlayer-angular-21-template
+applicationShowcase: https://intlayer-angular-21-template.vercel.app/
 history:
+  - version: 8.9.0
+    date: 2026-05-04
+    changes: "Update Solid useIntlayer API usage to direct property access"
   - version: 8.0.0
     date: 2026-01-26
-    changes: Release stable version
+    changes: "Release stable version"
   - version: 8.0.0
     date: 2025-12-30
-    changes: Add init command
+    changes: "Add init command"
   - version: 5.5.10
     date: 2025-06-29
-    changes: Init history
+    changes: "Initial history"
 ---
 
-# Translate your Angular website using Intlayer | Internationalization (i18n)
+# Translate your Angular 21 (Vite) website using Intlayer | Internationalization (i18n)
 
 ## Table of Contents
 
@@ -51,7 +55,7 @@ With Intlayer, you can:
   <Tab label="Code" value="code">
 
 <iframe
-  src="https://stackblitz.com/github/aymericzip/intlayer-angular-template?embed=1&ctl=1&file=intlayer.config.ts"
+  src="https://ide.intlayer.org/aymericzip/intlayer-angular-21-template?file=intlayer.config.ts"
   className="m-auto overflow-hidden rounded-lg border-0 max-md:size-full max-md:h-[700px] md:aspect-16/9 md:w-full"
   title="Demo CodeSandbox - How to Internationalize your application using Intlayer"
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
@@ -59,9 +63,20 @@ With Intlayer, you can:
 />
 
   </Tab>
+  <Tab label="Demo" value="demo">
+
+<iframe
+  src="https://intlayer-angular-21-template.vercel.app/"
+  className="m-auto overflow-hidden rounded-lg border-0 max-md:size-full max-md:h-[700px] md:aspect-16/9 md:w-full"
+  title="Demo - intlayer-angular-template"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+  loading="lazy"
+/>
+
+  </Tab>
 </Tabs>
 
-See [Application Template](https://github.com/aymericzip/intlayer-angular-template) on GitHub.
+See [Application Template](https://github.com/aymericzip/intlayer-angular-21-template) on GitHub.
 
 ### Step 1: Install Dependencies
 
@@ -69,26 +84,26 @@ Install the necessary packages using npm:
 
 ```bash packageManager="npm"
 npm install intlayer angular-intlayer
-npm install @angular-builders/custom-webpack --save-dev
+npm install @angular-builders/custom-esbuild --save-dev
 npx intlayer init
 ```
 
 ```bash packageManager="pnpm"
 pnpm add intlayer angular-intlayer
-pnpm add @angular-builders/custom-webpack --save-dev
+pnpm add @angular-builders/custom-esbuild --save-dev
 pnpm intlayer init
 ```
 
 ```bash packageManager="yarn"
 yarn add intlayer angular-intlayer
-yarn add @angular-builders/custom-webpack --save-dev
+yarn add @angular-builders/custom-esbuild --save-dev
 yarn intlayer init
 ```
 
 ```bash packageManager="bun"
 bun add intlayer angular-intlayer
-bun add @angular-builders/custom-webpack --dev
-bunx intlayer init
+bun add @angular-builders/custom-esbuild --dev
+bun x intlayer init
 ```
 
 - **intlayer**
@@ -98,14 +113,14 @@ bunx intlayer init
 - **angular-intlayer**
   The package that integrates Intlayer with Angular application. It provides context providers and hooks for Angular internationalization.
 
-- **@angular-builders/custom-webpack**
-  Required to customize the Webpack configuration of Angular CLI.
+- **@angular-builders/custom-esbuild**
+  Required to customize the esbuild configuration of Angular CLI.
 
 ### Step 2: Configuration of your project
 
 Create a config file to configure the languages of your application:
 
-```typescript fileName="intlayer.config.ts" codeFormat="typescript"
+```typescript fileName="intlayer.config.ts" codeFormat={["typescript", "esm", "commonjs"]}
 import { Locales, type IntlayerConfig } from "intlayer";
 
 const config: IntlayerConfig = {
@@ -123,51 +138,13 @@ const config: IntlayerConfig = {
 export default config;
 ```
 
-```javascript fileName="intlayer.config.mjs" codeFormat="esm"
-import { Locales } from "intlayer";
-
-/** @type {import('intlayer').IntlayerConfig} */
-const config = {
-  internationalization: {
-    locales: [
-      Locales.ENGLISH,
-      Locales.FRENCH,
-      Locales.SPANISH,
-      // Your other locales
-    ],
-    defaultLocale: Locales.ENGLISH,
-  },
-};
-
-export default config;
-```
-
-```javascript fileName="intlayer.config.cjs" codeFormat="commonjs"
-const { Locales } = require("intlayer");
-
-/** @type {import('intlayer').IntlayerConfig} */
-const config = {
-  internationalization: {
-    locales: [
-      Locales.ENGLISH,
-      Locales.FRENCH,
-      Locales.SPANISH,
-      // Your other locales
-    ],
-    defaultLocale: Locales.ENGLISH,
-  },
-};
-
-module.exports = config;
-```
-
 > Through this configuration file, you can set up localized URLs, middleware redirection, cookie names, the location and extension of your content declarations, disable Intlayer logs in the console, and more. For a complete list of available parameters, refer to the [configuration documentation](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/configuration.md).
 
 ### Step 3: Integrate Intlayer in Your Angular Configuration
 
-To integrate Intlayer with the Angular CLI, you need to use a custom builder. This guide assumes you are using Webpack (default for many Angular projects).
+To integrate Intlayer with the Angular CLI, you need to use a custom builder. This guide assumes you are using Vite/esbuild (default for Angular 21 projects).
 
-First, modify your `angular.json` to use the custom Webpack builder. Update the `build` and `serve` configurations:
+First, modify your `angular.json` to use the custom esbuild builder. Update the `build` and `serve` configurations:
 
 ```json5 fileName="angular.json"
 {
@@ -175,18 +152,27 @@ First, modify your `angular.json` to use the custom Webpack builder. Update the 
     "your-app-name": {
       "architect": {
         "build": {
-          "builder": "@angular-builders/custom-webpack:browser", // replace "@angular-devkit/build-angular:application",
+          "builder": "@angular-builders/custom-esbuild:application", // replace "@angular/build:application"
           "options": {
-            "customWebpackConfig": {
-              "path": "./webpack.config.ts",
-              "mergeStrategies": { "module.rules": "prepend" },
+            "define": {
+              "process.env": "{}",
             },
-            "main": "src/main.ts", // replace "browser": "src/main.ts",
+            "plugins": ["./esbuild.plugins.ts"],
+            "browser": "src/main.ts",
             // ...
           },
         },
         "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server", // replace "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular-builders/custom-esbuild:dev-server", // replace "@angular/build:dev-server"
+          "options": {
+            "prebundle": {
+              "exclude": [
+                "intlayer",
+                "angular-intlayer",
+                "@intlayer/config/built",
+                "@intlayer/core"
+              ]
+          },
         },
       },
     },
@@ -196,21 +182,31 @@ First, modify your `angular.json` to use the custom Webpack builder. Update the 
 
 > Make sure to replace `your-app-name` with the actual name of your project in `angular.json`.
 
-Next, create a `webpack.config.ts` file at the root of your project:
+Next, create a `esbuild.plugins.ts` file at the root of your project:
 
-```typescript fileName="webpack.config.ts"
-import { mergeConfig } from "angular-intlayer/webpack";
+```typescript fileName="esbuild.plugins.ts"
+import { intlayerEsbuildPlugin } from "angular-intlayer/esbuild";
 
-export default mergeConfig({});
+export default [intlayerEsbuildPlugin()];
 ```
 
-> The `mergeConfig` function configures Webpack with Intlayer. It injects the `IntlayerWebpackPlugin` (to handle content declaration files) and sets up aliases for optimal performance.
+> The `intlayerEsbuildPlugin` function configures esbuild with Intlayer. It injects the plugin to handle content declaration files and sets up configurations for optimal performance.
+
+> **NX users**: NX's Angular builders load plugin files via Node's native ESM resolution and do not compile TypeScript plugin files on the fly. Use a `.mjs` file instead and update the `plugins` reference in `angular.json` accordingly:
+>
+> ```javascript fileName="esbuild.plugins.mjs"
+> import { intlayerEsbuildPlugin } from "angular-intlayer/esbuild";
+>
+> export default [intlayerEsbuildPlugin()];
+> ```
+>
+> Then in `angular.json` point to `"./esbuild.plugins.mjs"` instead of `"./esbuild.plugins.ts"`.
 
 ### Step 4: Declare Your Content
 
 Create and manage your content declarations to store translations:
 
-```tsx fileName="src/app/app.content.ts" contentDeclarationFormat="typescript"
+```tsx fileName="src/app/app.content.ts" contentDeclarationFormat=["typescript", "esm", "cjs"]
 import { t, type Dictionary } from "intlayer";
 
 const appContent = {
@@ -331,17 +327,6 @@ import { useLocale } from "angular-intlayer";
       </select>
     </div>
   `,
-  styles: [
-    `
-      .locale-switcher {
-        margin: 1rem;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: fit-content;
-      }
-    `,
-  ],
 })
 export class LocaleSwitcherComponent {
   localeCtx = useLocale();
@@ -398,7 +383,7 @@ It is recommended to ignore the files generated by Intlayer. This allows you to 
 
 To do this, you can add the following instructions to your `.gitignore` file:
 
-```plaintext
+```bash
 # Ignore the files generated by Intlayer
 .intlayer
 ```

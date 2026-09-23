@@ -1,6 +1,6 @@
 ---
 createdAt: 2024-08-11
-updatedAt: 2026-03-31
+updatedAt: 2026-09-21
 title: CLI - All Intlayer CLI commands for your multilingual website
 description: Discover how to use the Intlayer CLI to manage your multilingual website. Follow the steps in this online documentation to set up your project in a few minutes.
 keywords:
@@ -17,6 +17,15 @@ slugs:
   - concept
   - cli
 history:
+  - version: 9.5.6
+    date: 2026-09-21
+    changes: "Add init infra command"
+  - version: 9.5.2
+    date: 2026-09-12
+    changes: "Replace the `ci` command by the `--ci` flag"
+  - version: 9.0.0
+    date: 2026-06-11
+    changes: "Add scan command"
   - version: 8.6.4
     date: 2026-03-31
     changes: "Add standalone command"
@@ -62,17 +71,14 @@ history:
   - version: 5.5.10
     date: 2025-06-29
     changes: "Init history"
+author: aymericzip
 ---
 
 # Intlayer CLI - All Intlayer CLI commands for your multilingual website
 
----
-
 ## Table of Contents
 
 <TOC/>
-
----
 
 ## Install Package
 
@@ -100,7 +106,7 @@ bun add intlayer-cli -g
 
 `intlayer-cli` package intend to transpile your [intlayer declarations](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/dictionary/content_file.md) into dictionaries.
 
-This package will transpile all intlayer files, such as `src/**/*.content.{ts|js|mjs|cjs|json}`. [See how to declare your Intlayer declaration files](https://github.com/aymericzip/intlayer/blob/main/packages/intlayer/README.md).
+This package will transpile all intlayer files, such as `src/**/*.content.{ts|js|mjs|cjs|json|tsx|jsx|md|mdx|yaml|yml}`. [See how to declare your Intlayer declaration files](https://github.com/aymericzip/intlayer/blob/main/packages/intlayer/README.md).
 
 To interpret intlayer dictionaries you can interpreters, such as [react-intlayer](https://www.npmjs.com/package/react-intlayer), or [next-intlayer](https://www.npmjs.com/package/next-intlayer)
 
@@ -121,7 +127,9 @@ To see how to configure available locales, or other parameters, refer to the [co
 
 ### Authentication
 
-- **[Login](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/login.md)** - Authenticate with the Intlayer CMS and get access credentials
+- **[Login](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/login.md)** - Authenticate with the Intlayer CMS and get access credentials
+
+> `intlayer login` issues an **access key** (`clientId` / `clientSecret`) that every credentialed command uses. The secret is a server-side credential and never reaches your client bundle — see [Keeping the access key safe](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/login.md#keeping-the-access-key-safe).
 
 ### Core Commands
 
@@ -146,6 +154,7 @@ To see how to configure available locales, or other parameters, refer to the [co
 ### Configuration
 
 - **[Initialize Intlayer](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/init.md)** - Set up Intlayer in your project with automatic configuration
+- **[Set Up Infrastructure](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/infra.md)** - Install the desktop app or self-host the CMS with Docker (all-in-one or Compose)
 - **[Manage Configuration](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/configuration.md)** - Get and push your Intlayer configuration to the CMS
 
 ### Documentation Management
@@ -158,9 +167,9 @@ To see how to configure available locales, or other parameters, refer to the [co
 - **[Editor Commands](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/editor.md)** - Use the Intlayer editor commands
 - **[Live Sync Commands](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/live.md)** - Use Live Sync to reflect CMS content changes at runtime
 
-### CI/CD & Automation
+### Auditing & Diagnostics
 
-- **[CI Command](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/ci.md)** - Run Intlayer commands with auto-injected credentials for CI/CD pipelines
+- **[Scan Website](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/scan.md)** - Measure page size and audit i18n/SEO health of any public URL
 
 ### Development Tools
 
@@ -172,6 +181,7 @@ To see how to configure available locales, or other parameters, refer to the [co
 ```json fileName="package.json"
 "scripts": {
   "intlayer:init": "npx intlayer init",
+  "intlayer:infra": "npx intlayer init infra",
   "intlayer:login": "npx intlayer login",
   "intlayer:build": "npx intlayer build",
   "intlayer:watch": "npx intlayer build --watch",
@@ -184,7 +194,8 @@ To see how to configure available locales, or other parameters, refer to the [co
   "intlayer:extract": "npx intlayer extract",
   "intlayer:projects": "npx intlayer projects list",
   "intlayer:doc:translate": "npx intlayer doc translate",
-  "intlayer:doc:review": "npx intlayer doc review"
+  "intlayer:doc:review": "npx intlayer doc review",
+  "intlayer:scan": "npx intlayer scan https://example.com"
 }
 ```
 

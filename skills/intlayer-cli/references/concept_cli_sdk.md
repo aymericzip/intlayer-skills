@@ -13,6 +13,7 @@ slugs:
   - concept
   - cli
   - sdk
+author: aymericzip
 ---
 
 # CLI SDK

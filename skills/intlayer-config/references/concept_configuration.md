@@ -1,6 +1,6 @@
 ---
 createdAt: 2024-08-13
-updatedAt: 2026-05-12
+updatedAt: 2026-08-29
 title: Configuration
 description: Learn how to configure Intlayer for your application. Understand the various settings and options available to customize Intlayer to your needs.
 keywords:
@@ -14,6 +14,21 @@ slugs:
   - concept
   - configuration
 history:
+  - version: 9.3.3
+    date: 2026-08-22
+    changes: "Enable analytics by default — active as soon as `@intlayer/analytics` is installed"
+  - version: 9.1.3
+    date: 2026-08-06
+    changes: "Make `routing.enableProxy` tri-state: unset (auto), `true`, `false`"
+  - version: 9.0.0
+    date: 2026-07-11
+    changes: "Add `analytics` configuration"
+  - version: 9.0.0
+    date: 2026-06-24
+    changes: "Add `enableProxy` option to the routing configuration"
+  - version: 8.10.0
+    date: 2026-06-17
+    changes: "Add `format` option to the dictionary configuration"
   - version: 8.9.4
     date: 2026-05-12
     changes: "Add support for LM Studio provider"
@@ -98,6 +113,7 @@ history:
   - version: 5.5.11
     date: 2025-06-29
     changes: "Add `docs` commands"
+author: aymericzip
 ---
 
 # Intlayer Configuration Documentation
@@ -106,13 +122,9 @@ history:
 
 Intlayer configuration files allow customization of various aspects of the plugin, such as internationalization, middleware, and content handling. This document provides a detailed description of each property in the configuration.
 
----
-
 ## Table of Contents
 
 <TOC/>
-
----
 
 ## Configuration File Support
 
@@ -127,13 +139,12 @@ Intlayer accepts JSON, JS, MJS, and TS configuration file formats:
 - `intlayer.config.mjs`
 - `.intlayerrc`
 
----
-
 ## Example config file
 
 ````typescript fileName="intlayer.config.ts" codeFormat="typescript"
 import { Locales, type IntlayerConfig } from "intlayer";
 import { nextjsRewrite } from "intlayer/routing";
+import { syncJSON } from "@intlayer/sync-json-plugin";
 import { z } from "zod";
 
 /**
@@ -223,6 +234,22 @@ const config: IntlayerConfig = {
      * Default: "prefix-no-default"
      */
     mode: "prefix-no-default",
+
+    /**
+     * Enables the Intlayer locale-routing proxy (middleware).
+     * The build-tool integration (e.g. the `intlayer()` Vite plugin) wires the
+     * locale detection / redirect / rewrite middleware in development, preview
+     * and production SSR.
+     * - unset (auto): the proxy runs, but development and preview servers keep
+     *   locale routing URL-driven by ignoring the locale stored in cookies and
+     *   headers. Locale prefixes still resolve, the locale is still persisted,
+     *   and Accept-Language detection still applies. Production behaves like `true`.
+     * - true: full behaviour in every environment, storage-driven redirects included.
+     * - false: no locale routing. On Next.js, the `intlayerProxy` middleware
+     *   becomes a pass-through.
+     * Default: undefined (auto)
+     */
+    enableProxy: undefined,
 
     /**
      * Where to store the user's selected locale.
@@ -348,12 +375,36 @@ const config: IntlayerConfig = {
   },
 
   /**
+   * Analytics configuration.
+   */
+  analytics: {
+    /**
+     * Whether analytics collection is enabled (page views, content exposures, A/B events).
+     * Requires `@intlayer/analytics` to be installed, and `editor.clientId` to be set for attribution.
+     * Default: true
+     */
+    enabled: true,
+
+    /**
+     * Milliseconds between automatic batched flushes to the backend.
+     * Default: 20000
+     */
+    flushInterval: 20000,
+
+    /**
+     * Fraction of sessions to record, from 0 (none) to 1 (all).
+     * Default: 1
+     */
+    sampleRate: 1,
+  },
+
+  /**
    * AI-powered translation and generation settings.
    */
   ai: {
     /**
      * AI provider to use.
-     * Options: 'openai', 'anthropic', 'mistral', 'deepseek', 'gemini', 'ollama', 'openrouter', 'alibaba', 'fireworks', 'groq', 'huggingface', 'bedrock', 'googlevertex', 'togetherai', 'lmstudio'
+     * Options: 'openai', 'anthropic', 'mistral', 'deepseek', 'gemini', 'ollama', 'openrouter', 'alibaba', 'fireworks', 'groq', 'huggingface', 'bedrock', 'googlevertex', 'togetherai', 'lmstudio', 'moonshotai'
      * Default: 'openai'
      */
     provider: "openai",
@@ -427,6 +478,29 @@ const config: IntlayerConfig = {
      * - This option will be ignored if `optimize` is disabled.
      */
     purge: false,
+
+    /**
+     * Group the per-locale dictionary chunks by the code-split boundary that uses
+     * them, so a lazily loaded page fetches its content in one request.
+     * Default: true
+     *
+     * Note:
+     * - Only applies to dictionaries using `importMode: 'dynamic'`.
+     */
+    chunkGrouping: true,
+
+    /**
+     * Load a dictionary together with the chunk that uses it, instead of fetching
+     * it once that chunk renders. Readers render synchronously instead of
+     * suspending, so navigating no longer flashes a loading state.
+     * Default: true
+     *
+     * Note:
+     * - Only applies to dictionaries using `importMode: 'dynamic'`.
+     * - Only the resolved locale is awaited, so a page still downloads only the
+     *   language it renders.
+     */
+    dictionariesPreload: true,
 
     /**
      * Output format for generated dictionary files.
@@ -586,21 +660,45 @@ const config: IntlayerConfig = {
   },
 
   /**
+   * Dictionary configuration.
+   */
+  dictionary: {
+    /**
+     * Controls how dictionaries are imported.
+     * - "static": Statically imported at build time.
+     * - "dynamic": Dynamically imported using Suspense.
+     * - "fetch": Fetched dynamically via the live sync API.
+     */
+    importMode: "static",
+
+    /**
+     * The default message format for all dictionaries in the project.
+     * - 'intlayer': Native intlayer format (default).
+     * - 'icu': ICU message format (used by next-intl, react-intl, etc.).
+     * - 'i18next': i18next interpolation format (used by i18next, react-i18next, next-i18next).
+     * - 'vue-i18n': Vue I18n format (used by vue-i18n).
+     * - 'po': GNU Gettext PO format.
+     */
+    format: "icu",
+  },
+
+  /**
    * Plugins configuration.
    */
-  plugins: [],
+  plugins: [
+    syncJSON({
+      format: "icu",
+      source: ({ locale }) => `./messages/${locale}.json`,
+    }),
+  ],
 };
 
 export default config;
 ````
 
----
-
 ## Configuration Reference
 
 The following sections describe the various configuration settings available for Intlayer.
-
----
 
 ### Internationalization Configuration
 
@@ -612,8 +710,6 @@ Defines settings related to internationalization, including available locales an
 | `requiredLocales` | The list of required locales in the application.                             | `string[]` | `[]`                | `[]`                 | • If empty, all locales are required in `strict` mode.<br/>• Ensure required locales are also defined in the `locales` field.                                                                                                                                              |
 | `strictMode`      | Ensure strong implementations of internationalized content using TypeScript. | `string`   | `'inclusive'`       |                      | • If `"strict"`: the `t` function requires each declared locale to be defined - throws an error if one is missing or undeclared.<br/>• If `"inclusive"`: warns on missing locales but accepts undeclared ones that exist.<br/>• If `"loose"`: accepts any existing locale. |
 | `defaultLocale`   | The default locale used as a fallback if the requested locale is not found.  | `string`   | `Locales.ENGLISH`   | `'en'`               | Used to determine the locale when none is specified in the URL, cookie, or header.                                                                                                                                                                                         |
-
----
 
 ### Editor Configuration
 
@@ -634,17 +730,30 @@ Defines settings related to the integrated editor, including server port and act
 | `liveSyncPort`               | The port of the live sync server.                                                                                                                               | `number`                          | `4000`                              | `4000`                                                                                          |                                                                                                                                                                                                                      |
 | `liveSyncURL`                | The URL of the live sync server.                                                                                                                                | `string`                          | `'http://localhost:{liveSyncPort}'` | `'https://example.com'`                                                                         | Points to localhost by default; can be changed for a remote live sync server.                                                                                                                                        |
 
+### Analytics Configuration
+
+Defines settings related to Intlayer analytics: collecting which content is actually shown to users (page views, content exposures) and powering content A/B testing.
+
+Analytics is opt-out: it is enabled by default, and starts collecting as soon as the [`@intlayer/analytics`](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/analytics.md) package is installed **and** a project key (`editor.clientId`) is configured for attribution. Set `analytics.enabled` to `false` — or leave the package uninstalled — and the whole analytics integration is dead-code-eliminated from your application bundle.
+
+| Field           | Description                                                               | Type      | Default | Example | Note                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------- | --------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`       | Enables analytics collection (page views, content exposures, A/B events). | `boolean` | `true`  | `false` | Requires `@intlayer/analytics` to be installed and `editor.clientId` to be set for attribution; otherwise analytics stays disabled even if `enabled` is `true`. |
+| `flushInterval` | Milliseconds between automatic batched flushes to the backend.            | `number`  | `20000` | `10000` |                                                                                                                                                                 |
+| `sampleRate`    | Fraction of sessions to record, from `0` (none) to `1` (all).             | `number`  | `1`     | `0.5`   | Sampling is deterministic per session, so a recorded session reports all of its events (no partial funnels).                                                    |
+
 ### Routing Configuration
 
 Settings that control routing behavior, including URL structure, locale storage, and middleware handling.
 
-| Field      | Description                                                                                                                                                                  | Type                                                                                                                                                                                                         | Default                | Example                                                                                                                                                                                     | Note                                                                                                                                                                                                                                                                   |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode`     | URL routing mode for locale handling.                                                                                                                                        | `'prefix-no-default'` &#124; <br/> `'prefix-all'` &#124; <br/> `'no-prefix'` &#124; <br/> `'search-params'`                                                                                                  | `'prefix-no-default'`  | `'prefix-no-default'`: `/dashboard` (en) or `/fr/dashboard` (fr). `'prefix-all'`: `/en/dashboard`. `'no-prefix'`: locale handled via other means. `'search-params'`: `/dashboard?locale=fr` | Does not impact cookie or locale storage management.                                                                                                                                                                                                                   |
-| `storage`  | Configuration for storing the locale in the client.                                                                                                                          | `false` &#124; <br/> `'cookie'` &#124; <br/> `'localStorage'` &#124; <br/> `'sessionStorage'` &#124; <br/> `'header'` &#124; <br/> `CookiesAttributes` &#124; <br/> `StorageAttributes` &#124; <br/> `Array` | `['cookie', 'header']` | `'localStorage'` <br/> `[{ type: 'cookie', name: 'custom-locale', secure: true }]`                                                                                                          | See Storage Options table below.                                                                                                                                                                                                                                       |
-| `basePath` | The base path for the application URLs.                                                                                                                                      | `string`                                                                                                                                                                                                     | `''`                   | `'/my-app'`                                                                                                                                                                                 | If app is at `https://example.com/my-app, basePath is `'/my-app'`and URLs become`https://example.com/my-app/en`.                                                                                                                                                       |
-| `rewrite`  | Custom URL rewriting rules that override the default routing mode for specific paths. Supports `[param]` dynamic parameters.                                                 | `Record<string, StrictModeLocaleMap<string>>`                                                                                                                                                                | `undefined`            | See example below                                                                                                                                                                           | • Rewrite rules take precedence over `mode`.<br/>• Works with Next.js and Vite.<br/>• `getLocalizedUrl()` automatically applies matching rules.<br/>• See [Custom URL Rewrites](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/custom_url_rewrites.md). |
-| `domains`  | Maps locales to domain hostnames for domain-based routing. When set, URLs for a locale use that domain as the base (absolute URL) and no locale prefix is added to the path. | `Partial<Record<Locale, string>>`                                                                                                                                                                            | `undefined`            | `{ zh: 'intlayer.zh', fr: 'intlayer.org' }`                                                                                                                                                 | • Protocol defaults to `https://` when not included in the hostname.<br/>• The domain itself identifies the locale, so no `/zh/` prefix is added.<br/>• `getLocalizedUrl('/', 'zh')` returns `https://intlayer.zh/`.                                                   |
+| Field         | Description                                                                                                                                                                  | Type                                                                                                                                                                                                         | Default                | Example                                                                                                                                                                                     | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`        | URL routing mode for locale handling.                                                                                                                                        | `'prefix-no-default'` &#124; <br/> `'prefix-all'` &#124; <br/> `'no-prefix'` &#124; <br/> `'search-params'`                                                                                                  | `'prefix-no-default'`  | `'prefix-no-default'`: `/dashboard` (en) or `/fr/dashboard` (fr). `'prefix-all'`: `/en/dashboard`. `'no-prefix'`: locale handled via other means. `'search-params'`: `/dashboard?locale=fr` | Does not impact cookie or locale storage management.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `enableProxy` | Enables the Intlayer locale-routing proxy (middleware).                                                                                                                      | `boolean` &#124; <br/> `undefined`                                                                                                                                                                           | `undefined` (auto)     | `true`                                                                                                                                                                                      | • Unset (auto): the proxy runs, but development and preview servers ignore the locale stored in cookies/headers as a redirect source. Locale prefixes still resolve (`/en` → `/`), the locale is still persisted, and `Accept-Language` detection still applies. Production behaves like `true`.<br/>• `true`: full behaviour in every environment, storage-driven redirects included.<br/>• `false`: no locale routing; handle it yourself. On Next.js, the `intlayerProxy` middleware becomes a pass-through. |
+| `storage`     | Configuration for storing the locale in the client.                                                                                                                          | `false` &#124; <br/> `'cookie'` &#124; <br/> `'localStorage'` &#124; <br/> `'sessionStorage'` &#124; <br/> `'header'` &#124; <br/> `CookiesAttributes` &#124; <br/> `StorageAttributes` &#124; <br/> `Array` | `['cookie', 'header']` | `'localStorage'` <br/> `[{ type: 'cookie', name: 'custom-locale', secure: true }]`                                                                                                          | See Storage Options table below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `basePath`    | The base path for the application URLs.                                                                                                                                      | `string`                                                                                                                                                                                                     | `''`                   | `'/my-app'`                                                                                                                                                                                 | If app is at `https://example.com/my-app, basePath is `'/my-app'`and URLs become`https://example.com/my-app/en`.                                                                                                                                                                                                                                                                                                                                                                                                |
+| `rewrite`     | Custom URL rewriting rules that override the default routing mode for specific paths. Supports `[param]` dynamic parameters.                                                 | `Record<string, StrictModeLocaleMap<string>>`                                                                                                                                                                | `undefined`            | See example below                                                                                                                                                                           | • Rewrite rules take precedence over `mode`.<br/>• Works with Next.js and Vite.<br/>• `getLocalizedUrl()` automatically applies matching rules.<br/>• See [Custom URL Rewrites](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/custom_url_rewrites.md).                                                                                                                                                                                                                                          |
+| `domains`     | Maps locales to domain hostnames for domain-based routing. When set, URLs for a locale use that domain as the base (absolute URL) and no locale prefix is added to the path. | `Partial<Record<Locale, string>>`                                                                                                                                                                            | `undefined`            | `{ zh: 'intlayer.zh', fr: 'intlayer.org' }`                                                                                                                                                 | • Protocol defaults to `https://` when not included in the hostname.<br/>• The domain itself identifies the locale, so no `/zh/` prefix is added.<br/>• `getLocalizedUrl('/', 'zh')` returns `https://intlayer.zh/`.                                                                                                                                                                                                                                                                                            |
 
 **`rewrite` example**:
 
@@ -681,15 +790,16 @@ routing: {
 
 When using cookie storage, you can configure additional cookie attributes:
 
-| Field      | Description                                   | Type                                                  |
-| ---------- | --------------------------------------------- | ----------------------------------------------------- |
-| `name`     | Cookie name. Default: `'INTLAYER_LOCALE'`     | `string`                                              |
-| `domain`   | Cookie domain. Default: `undefined`           | `string`                                              |
-| `path`     | Cookie path. Default: `undefined`             | `string`                                              |
-| `secure`   | Require HTTPS. Default: `undefined`           | `boolean`                                             |
-| `httpOnly` | HTTP-only flag. Default: `undefined`          | `boolean`                                             |
-| `sameSite` | SameSite policy.                              | `'strict'` &#124; <br/> `'lax'` &#124; <br/> `'none'` |
-| `expires`  | Expiration date or days. Default: `undefined` | `Date` &#124; <br/> `number`                          |
+| Field      | Description                                                                                                 | Type                                                  |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `name`     | Cookie name. Default: `'INTLAYER_LOCALE'`                                                                   | `string`                                              |
+| `domain`   | Cookie domain. Default: `undefined`                                                                         | `string`                                              |
+| `path`     | Cookie path. Default: `undefined`                                                                           | `string`                                              |
+| `secure`   | Require HTTPS. Default: `undefined`                                                                         | `boolean`                                             |
+| `httpOnly` | HTTP-only flag. Default: `undefined`                                                                        | `boolean`                                             |
+| `sameSite` | SameSite policy.                                                                                            | `'strict'` &#124; <br/> `'lax'` &#124; <br/> `'none'` |
+| `expires`  | A `number` is days from creation; a `Date` (or ISO date string) is an absolute expiry. Default: `undefined` | `Date` &#124; <br/> `number` &#124; <br/> `string`    |
+| `maxAge`   | Lifetime in seconds from creation. Takes precedence over `expires`. Default: `undefined`                    | `number`                                              |
 
 #### Locale Storage Attributes
 
@@ -833,8 +943,6 @@ const config: IntlayerConfig = {
 export default config;
 ```
 
----
-
 ### Content Configuration
 
 Settings related to content handling within the application, including directory names, file extensions, and derived configurations.
@@ -847,8 +955,6 @@ Settings related to content handling within the application, including directory
 | `codeDir`        | Directory path where the code is stored, relative to the base directory.                             | `string[]` | `['.']`                                                                                                                                                                   | `['src', '../../ui-library']`                                                                                                                                                         | • Used to watch for code files to transform (prune, optimize).<br/>• Keeping separate from `contentDir` can improve build performance. |
 | `excludedPath`   | Directories excluded from content search.                                                            | `string[]` | `['**/node_modules/**', '**/dist/**', '**/build/**', '**/.intlayer/**', '**/.next/**', '**/.nuxt/**', '**/.expo/**', '**/.vercel/**', '**/.turbo/**', '**/.tanstack/**']` |                                                                                                                                                                                       | Not yet used; planned for future implementation.                                                                                       |
 | `formatCommand`  | Command to format content files when Intlayer writes them locally.                                   | `string`   | `undefined`                                                                                                                                                               | `'npx prettier --write "{{file}}" --log-level silent'` (Prettier), `'npx biome format "{{file}}" --write --log-level none'` (Biome), `'npx eslint --fix "{{file}}" --quiet'` (ESLint) | • `{{file}}` is replaced with the file path.<br/>• If not set, Intlayer auto-detects (tries prettier, biome, eslint).                  |
-
----
 
 ### System Configuration
 
@@ -884,6 +990,7 @@ For more information about content declaration files and how configuration value
 | `contentAutoTransformation` | Automatically transforms content strings into typed nodes (markdown, HTML, or insertion).                                                                 | `boolean` &#124; <br/> `{ markdown?: boolean; html?: boolean; insertion?: boolean }`                            | `false`        | `true`                                                                                      | • Markdown: `### Title` → `md('### Title')`.<br/>• HTML: `<div>Title</div>` → `html('<div>Title</div>')`.<br/>• Insertion: `Hello {{name}}` → `insert('Hello {{name}}')`.                                                                                                                                                                                                                                                                                                                   |
 | `location`                  | Indicates where dictionary files are stored and their CMS synchronization mode.                                                                           | `'local'` &#124; <br/> `'remote'` &#124; <br/> `'hybrid'` &#124; <br/> `'plugin'` &#124; <br/> `string`         | `'local'`      | `'hybrid'`                                                                                  | • `'local'`: managed locally only.<br/>• `'remote'`: managed remotely only (CMS).<br/>• `'hybrid'`: managed both locally and remotely.<br/>• `'plugin'` or custom string: managed by a plugin or custom source.                                                                                                                                                                                                                                                                             |
 | `importMode`                | Controls how dictionaries are imported.                                                                                                                   | `'static'` &#124; <br/> `'dynamic'` &#124; <br/> `'fetch'`                                                      | `'static'`     | `'dynamic'`                                                                                 | • `'static'`: imported statically (replaces `useIntlayer` with `useDictionary`).<br/>• `'dynamic'`: imported dynamically via Suspense (replaces with `useDictionaryDynamic`).<br/>• `'fetch'`: fetched via live sync API; falls back to `'dynamic'` on failure.<br/>• Relies on `@intlayer/babel` and `@intlayer/swc` plugins.<br/>• Keys must be declared statically.<br/>• Ignored if `optimize` is disabled.<br/>• Does not affect `getIntlayer`, `getDictionary`, `useDictionary`, etc. |
+| `format`                    | The default message format for all dictionaries in the project.                                                                                           | `'intlayer'` &#124; <br/> `'icu'` &#124; <br/> `'i18next'` &#124; <br/> `'vue-i18n'` &#124; <br/> `'po'`        | `'intlayer'`   | `'icu'`                                                                                     | • `'intlayer'`: Native intlayer format.<br/>• `'icu'`: ICU message format.<br/>• `'i18next'`: i18next interpolation format.<br/>• `'vue-i18n'`: Vue I18n format.<br/>• `'po'`: GNU Gettext PO format.                                                                                                                                                                                                                                                                                       |
 | `priority`                  | Priority of the dictionary. Higher values take precedence over lower ones when resolving conflicts between dictionaries.                                  | `number`                                                                                                        | `undefined`    | `1`                                                                                         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `live`                      | Deprecated - use `importMode: 'fetch'` instead. Indicated whether dictionary content was fetched dynamically via the live sync API.                       | `boolean`                                                                                                       | `undefined`    |                                                                                             | Renamed to `importMode: 'fetch'` in v8.0.0.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `schema`                    | Auto-generated by Intlayer for JSON schema validation.                                                                                                    | `'https://intlayer.org/schema.json'`                                                                            | auto-generated |                                                                                             | Do not modify manually.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -902,8 +1009,6 @@ dictionary: {
   }
 }
 ```
-
----
 
 ### Logger Configuration
 
@@ -943,15 +1048,15 @@ Intlayer supports multiple AI providers for enhanced flexibility and choice. Cur
 - **Together.ai**
 - **LM Studio**
 
-| Field                | Description                                                                                                                         | Type                                                                                                                                                                                                                                                                                                                                                                                                                     | Default     | Example                                                       | Note                                                                                                                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `provider`           | The provider to use for the AI features of Intlayer.                                                                                | `'openai'` &#124; <br/> `'anthropic'` &#124; <br/> `'mistral'` &#124; <br/> `'deepseek'` &#124; <br/> `'gemini'` &#124; <br/> `'ollama'` &#124; <br/> `'openrouter'` &#124; <br/> `'alibaba'` &#124; <br/> `'fireworks'` &#124; <br/> `'groq'` &#124; <br/> `'huggingface'` &#124; <br/> `'bedrock'` &#124; <br/> `'googleaistudio'` &#124; <br/> `'googlevertex'` &#124; <br/> `'togetherai'` &#124; <br/> `'lmstudio'` | `undefined` | `'anthropic'`                                                 | Different providers require different API keys and have different pricing.                                                                                                                              |
-| `model`              | The model to use for AI features.                                                                                                   | `string`                                                                                                                                                                                                                                                                                                                                                                                                                 | None        | `'gpt-4o-2024-11-20'`                                         | Specific model varies by provider.                                                                                                                                                                      |
-| `temperature`        | Controls the randomness of AI responses.                                                                                            | `number`                                                                                                                                                                                                                                                                                                                                                                                                                 | None        | `0.1`                                                         | Higher temperature = more creative and less predictable.                                                                                                                                                |
-| `apiKey`             | Your API key for the selected provider.                                                                                             | `string`                                                                                                                                                                                                                                                                                                                                                                                                                 | None        | `process.env.OPENAI_API_KEY`                                  | Keep secret; store in environment variables.                                                                                                                                                            |
-| `applicationContext` | Additional context about your application to help the AI generate more accurate translations (domain, audience, tone, terminology). | `string`                                                                                                                                                                                                                                                                                                                                                                                                                 | None        | `'My application context'`                                    | Can be used to add rules (e.g. `"You should not transform urls"`).                                                                                                                                      |
-| `baseURL`            | The base URL for the AI API.                                                                                                        | `string`                                                                                                                                                                                                                                                                                                                                                                                                                 | None        | `'https://api.openai.com/v1'` <br/> `'http://localhost:5000'` | Can point to a local or custom AI API endpoint.                                                                                                                                                         |
-| `dataSerialization`  | Data serialization format for AI features.                                                                                          | `'json'` &#124; <br/> `'toon'`                                                                                                                                                                                                                                                                                                                                                                                           | `undefined` | `'toon'`                                                      | • `'json'`: standard, reliable; uses more tokens.<br/>• `'toon'`: fewer tokens, less consistent.<br/>• Additional parameters are passed to the AI model as context (reasoning effort, verbosity, etc.). |
+| Field                | Description                                                                                                                         | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Default     | Example                                                       | Note                                                                                                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider`           | The provider to use for the AI features of Intlayer.                                                                                | `'openai'` &#124; <br/> `'anthropic'` &#124; <br/> `'mistral'` &#124; <br/> `'deepseek'` &#124; <br/> `'gemini'` &#124; <br/> `'ollama'` &#124; <br/> `'openrouter'` &#124; <br/> `'alibaba'` &#124; <br/> `'fireworks'` &#124; <br/> `'groq'` &#124; <br/> `'huggingface'` &#124; <br/> `'bedrock'` &#124; <br/> `'googleaistudio'` &#124; <br/> `'googlevertex'` &#124; <br/> `'togetherai'` &#124; <br/> `'lmstudio'` &#124; <br/> `'moonshotai'` | `undefined` | `'anthropic'`                                                 | Different providers require different API keys and have different pricing.                                                                                                                              |
+| `model`              | The model to use for AI features.                                                                                                   | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                             | None        | `'gpt-4o-2024-11-20'`                                         | Specific model varies by provider.                                                                                                                                                                      |
+| `temperature`        | Controls the randomness of AI responses.                                                                                            | `number`                                                                                                                                                                                                                                                                                                                                                                                                                                             | None        | `0.1`                                                         | Higher temperature = more creative and less predictable.                                                                                                                                                |
+| `apiKey`             | Your API key for the selected provider.                                                                                             | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                             | None        | `process.env.OPENAI_API_KEY`                                  | Keep secret; store in environment variables.                                                                                                                                                            |
+| `applicationContext` | Additional context about your application to help the AI generate more accurate translations (domain, audience, tone, terminology). | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                             | None        | `'My application context'`                                    | Can be used to add rules (e.g. `"You should not transform urls"`).                                                                                                                                      |
+| `baseURL`            | The base URL for the AI API.                                                                                                        | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                             | None        | `'https://api.openai.com/v1'` <br/> `'http://localhost:5000'` | Can point to a local or custom AI API endpoint.                                                                                                                                                         |
+| `dataSerialization`  | Data serialization format for AI features.                                                                                          | `'json'` &#124; <br/> `'toon'`                                                                                                                                                                                                                                                                                                                                                                                                                       | `undefined` | `'toon'`                                                      | • `'json'`: standard, reliable; uses more tokens.<br/>• `'toon'`: fewer tokens, less consistent.<br/>• Additional parameters are passed to the AI model as context (reasoning effort, verbosity, etc.). |
 
 ### Build Configuration
 
@@ -963,17 +1068,17 @@ Build options apply to the `@intlayer/babel` and `@intlayer/swc` plugins.
 
 > When optimized, Intlayer will replace dictionary calls to optimize chunking, so the final bundle only imports dictionaries that are actually used.
 
-| Field             | Description                                                          | Type                             | Default                                                                                                                                                                           | Example                                                                       | Note                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------- | -------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode`            | Controls the mode of the build.                                      | `'auto'` &#124; <br/> `'manual'` | `'auto'`                                                                                                                                                                          | `'manual'`                                                                    | • `'auto'`: build enabled automatically when the application is built.<br/>• `'manual'`: only runs when the build command is executed.<br/>• Can be used to disable dictionary builds (e.g. to avoid running in Node.js environments).                                                                                                                                    |
-| `optimize`        | Controls whether the build should be optimized.                      | `boolean`                        | `undefined`                                                                                                                                                                       | `process.env.NODE_ENV === 'production'`                                       | • If unset, optimization is triggered on framework build (Vite/Next.js).<br/>• `true` forces optimization including dev mode.<br/>• `false` disables it.<br/>• When enabled, replaces dictionary calls to optimize chunking - only used dictionaries are imported.<br/>• Relies on `@intlayer/babel` and `@intlayer/swc` plugins.<br/>• Keys must be declared statically. |
-| `minify`          | Whether to minify the dictionaries to reduce the bundle size.        | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | • Indicates whether the bundle should be minified.<br/>• Default: `false`.<br/>• This option will be ignored if `optimize` is disabled.<br/>• This option will be ignored if `editor.enabled` is true.                                                                                                                                                                    |
-| `purge`           | Whether to purge the unused keys in a dictionaries.                  | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | • Indicates whether the bundle should be purged.<br/>• Default: `false`.<br/>• This option will be ignored if `optimize` is disabled.                                                                                                                                                                                                                                     |
-| `checkTypes`      | Indicates if the build should check TypeScript types and log errors. | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | Can slow down the build.                                                                                                                                                                                                                                                                                                                                                  |
-| `outputFormat`    | Controls the output format of the dictionaries.                      | `('esm' &#124; 'cjs')[]`         | `['esm', 'cjs']`                                                                                                                                                                  | `['cjs']`                                                                     |                                                                                                                                                                                                                                                                                                                                                                           |
-| `traversePattern` | Patterns defining which files to traverse during optimization.       | `string[]`                       | `['**/*.{tsx,ts,js,mjs,cjs,jsx,vue,svelte,svte}', '!**/node_modules/**', '!**/dist/**', '!**/.intlayer/**', '!**/*.config.*', '!**/*.test.*', '!**/*.spec.*', '!**/*.stories.*']` | `['src/**/*.{ts,tsx}', '../ui-library/**/*.{ts,tsx}', '!**/node_modules/**']` | • Limit optimization to relevant files to improve build performance.<br/>• Ignored if `optimize` is disabled.<br/>• Uses glob pattern.                                                                                                                                                                                                                                    |
-
----
+| Field                 | Description                                                                                                              | Type                             | Default                                                                                                                                                                           | Example                                                                       | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                | Controls the mode of the build.                                                                                          | `'auto'` &#124; <br/> `'manual'` | `'auto'`                                                                                                                                                                          | `'manual'`                                                                    | • `'auto'`: build enabled automatically when the application is built.<br/>• `'manual'`: only runs when the build command is executed.<br/>• Can be used to disable dictionary builds (e.g. to avoid running in Node.js environments).                                                                                                                                                                                                                                                                                     |
+| `optimize`            | Controls whether the build should be optimized.                                                                          | `boolean`                        | `undefined`                                                                                                                                                                       | `process.env.NODE_ENV === 'production'`                                       | • If unset, optimization is triggered on framework build (Vite/Next.js).<br/>• `true` forces optimization including dev mode.<br/>• `false` disables it.<br/>• When enabled, replaces dictionary calls to optimize chunking - only used dictionaries are imported.<br/>• Relies on `@intlayer/babel` and `@intlayer/swc` plugins.<br/>• Keys must be declared statically.                                                                                                                                                  |
+| `minify`              | Whether to minify the dictionaries to reduce the bundle size.                                                            | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | • Indicates whether the bundle should be minified.<br/>• Default: `false`.<br/>• This option will be ignored if `optimize` is disabled.<br/>• This option will be ignored if `editor.enabled` is true.                                                                                                                                                                                                                                                                                                                     |
+| `purge`               | Whether to purge the unused keys in a dictionaries.                                                                      | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | • Indicates whether the bundle should be purged.<br/>• Default: `false`.<br/>• This option will be ignored if `optimize` is disabled.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `checkTypes`          | Indicates if the build should check TypeScript types and log errors.                                                     | `boolean`                        | `false`                                                                                                                                                                           |                                                                               | Can slow down the build.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `chunkGrouping`       | Whether to group the per-locale dictionary chunks by the code-split boundary that uses them.                             | `boolean`                        | `true`                                                                                                                                                                            |                                                                               | • Without grouping, a page assembled from many components issues one request per dictionary.<br/>• Dictionaries reached from several boundaries move to a shared chunk, so no page ships another page's content.<br/>• Only applies to dictionaries using `importMode: 'dynamic'`.<br/>• Only applies to the client build, and only when bundling (not in dev).                                                                                                                                                            |
+| `dictionariesPreload` | Whether a dictionary should load together with the chunk that uses it, instead of being fetched once that chunk renders. | `boolean`                        | `true`                                                                                                                                                                            |                                                                               | • The generated entry point requests the browsing locale as it evaluates, so the request leaves with the chunk that needs it instead of once that chunk renders.<br/>• Readers usually render synchronously instead of suspending, so navigating no longer flashes a loading state.<br/>• Only the resolved locale is requested, so a page still downloads only the language it renders.<br/>• Only applies to dictionaries using `importMode: 'dynamic'`, on the client build.<br/>• Not applied by Metro-based bundlers. |
+| `outputFormat`        | Controls the output format of the dictionaries.                                                                          | `('esm' &#124; 'cjs')[]`         | `['esm', 'cjs']`                                                                                                                                                                  | `['cjs']`                                                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `traversePattern`     | Patterns defining which files to traverse during optimization.                                                           | `string[]`                       | `['**/*.{tsx,ts,js,mjs,cjs,jsx,vue,svelte,svte}', '!**/node_modules/**', '!**/dist/**', '!**/.intlayer/**', '!**/*.config.*', '!**/*.test.*', '!**/*.spec.*', '!**/*.stories.*']` | `['src/**/*.{ts,tsx}', '../ui-library/**/*.{ts,tsx}', '!**/node_modules/**']` | • Limit optimization to relevant files to improve build performance.<br/>• Ignored if `optimize` is disabled.<br/>• Uses glob pattern.                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ### Compiler Configuration
 
@@ -994,10 +1099,93 @@ Settings that control the Intlayer compiler, which extracts dictionaries straigh
 | --------- | --------------------------------------------------------------------------------- | --------------------------- |
 | `schemas` | Permet de définir des schémas Zod pour valider la structure de vos dictionnaires. | `Record<string, ZodSchema>` |
 
----
-
 ### Plugins
 
 | Field     | Description                           | Type               |
 | --------- | ------------------------------------- | ------------------ |
 | `plugins` | Liste des plugins Intlayer à activer. | `IntlayerPlugin[]` |
+
+## Frequently Asked Questions
+
+<FAQ>
+
+<Question title="Where should the intlayer.config.ts file live?">
+
+At the root of your project, next to `package.json`. Intlayer also accepts `intlayer.config.js`, `intlayer.config.mjs`, `intlayer.config.cjs` and JSON, so the file matches whichever module system your project uses.
+
+</Question>
+<Question title="How much does i18n add to my bundle size?">
+
+Much less than a namespace based setup, because a page never downloads a catalog it does not render. Server rendered markup resolves its content on the server, and the build time compiler replaces `useIntlayer` calls with the exact dictionary entries a component uses, so unused keys and unused languages are dropped. [Dynamic dictionaries](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/dynamic_dictionaries/index.md) split the rest per locale. Measured against the usual alternatives, Intlayer reduces bundle and page size by up to 50%. See [bundle optimization](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/bundle_optimization.md) and the [benchmark](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/benchmark/index.md).
+
+</Question>
+<Question title="Can I migrate from `i18next`, `next-intl` or `react-i18next` without rewriting my components?">
+
+Yes, and there are two paths. You can migrate the content progressively with the [i18next migration guide](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/migration_from_i18next_to_intlayer.md) or the [next-intl migration guide](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/migration_from_next-intl_to_intlayer.md). Or you can keep your current API entirely: the [compat adapters](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/compat/index.md) expose the exact same API as `i18next`, `react-i18next`, `next-intl`, `next-i18next`, `react-intl`, `use-intl`, `vue-i18n` and `Lingui`, but served by Intlayer dictionaries, so imports change and component code does not.
+
+</Question>
+<Question title="Can I keep my existing JSON translation files?">
+
+Yes. The [sync JSON plugin](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/plugins/sync-json.md) keeps your `/messages/{locale}/{namespace}.json` files as the source of truth and generates Intlayer dictionaries from them, in both directions. A [sync PO plugin](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/plugins/sync-po.md) does the same for gettext catalogs, and [per locale files](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/per_locale_file.md) let you split content by language instead of grouping locales in one file.
+
+</Question>
+<Question title="Do I have to move my content key by key?">
+
+No. Run `npx intlayer extract` and Intlayer reads your source files, pulls the user facing strings out and writes a `.content` file next to each one, so you review a diff instead of copying strings into a catalog one at a time. See the [extract command](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/extract.md).
+
+For a fully automated pipeline, the [Intlayer Compiler](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/compiler.md) does the same at build time on JSX, TSX, Vue and Svelte source, generating the dictionaries on every change so there are no keys to maintain by hand. It works by static analysis, so strings that only exist at runtime stay out of reach, and it needs a few annotations to tell user facing text apart from application logic.
+
+</Question>
+<Question title="What editor and AI agent tooling is available?">
+
+Five pieces, all optional:
+
+- **[VS Code extension](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/vs_code_extension.md)**: jump from a `useIntlayer` key to the content file that declares it, extract content from a component, and run build, fill, test, push and pull from the command palette or a dedicated Intlayer tab.
+- **[LSP server](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/lsp.md)**: the same awareness in any editor that speaks LSP, with go to definition, find all references, hover previews of a translated value, autocompletion of keys and fields, and a warning when a key is not declared anywhere. It also resolves `i18next`, `react-i18next`, `next-intl` and `use-intl` calls, which helps while you migrate.
+- **[MCP server](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/mcp_server.md)**: exposes the Intlayer documentation and CLI to Cursor, VS Code, Claude Desktop, Claude Code and ChatGPT, so an assistant answers from current docs instead of guessing, and can run commands such as `intlayer fill` itself.
+- **[Agent skills](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/agent_skills.md)**: focused skills such as `intlayer-config`, `intlayer-cli` and `intlayer-content`, plus one per framework, that teach an agent your routing setup and the content node types.
+- **[ESLint plugin](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/eslint.md)**: `no-raw-text` flags hardcoded strings, with further rules for static dictionary keys and unused content.
+
+</Question>
+<Question title="How do I add a new language to my app?">
+
+Add the locale to `internationalization.locales`, then run `npx intlayer fill` to translate the existing content into it. The generated types update at the same time, so any content file missing the new locale becomes a type error rather than a silent fallback.
+
+</Question>
+<Question title="How do I remove the locale prefix from my URLs?">
+
+Set `routing.mode`. The default `"prefix-no-default"` gives `/about` for the default locale and `/fr/about` for the others. `"prefix-all"` prefixes every locale. `"no-prefix"` keeps the locale out of the path entirely and resolves it from a cookie, a header or a domain. `"search-params"` puts it in the query string as `/about?locale=fr`.
+
+</Question>
+<Question title="Can I serve each language from its own domain?">
+
+Yes. `routing.domains` maps a locale to a hostname, for example `{ fr: 'example.fr', en: 'example.com' }`. The domain identifies the locale, so no prefix is added to the path, and `getLocalizedUrl` returns an absolute URL on the right domain.
+
+</Question>
+<Question title="How is the user's language detected?">
+
+Through `routing.storage`, which lists the sources to read in order, typically the URL, then a cookie, then the `Accept-Language` header. An explicit choice by the user is persisted so it wins on the next visit.
+
+</Question>
+<Question title="What does routing.enableProxy do?">
+
+It controls the locale routing proxy, the middleware that resolves prefixes and redirects. Left unset, the proxy runs but development and preview servers ignore the stored locale as a redirect source, which avoids being bounced to a language you are not testing; production behaves as if it were `true`. Set it to `false` to handle locale routing yourself.
+
+</Question>
+<Question title="What is the difference between importMode static, dynamic and fetch?">
+
+`"static"`, the default, imports dictionaries statically so they are bundled and read synchronously. `"dynamic"` imports them through Suspense, so a locale is downloaded only when a component renders it, which is what you want for large content sets. `"fetch"` retrieves them from the live sync API and falls back to `"dynamic"` on failure. See [bundle optimization](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/bundle_optimization.md) and [dynamic dictionaries](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/dynamic_dictionaries/index.md).
+
+</Question>
+<Question title="Where do I set the AI provider and API key for automatic translation?">
+
+Either in the configuration file or on the command line with `--provider`, `--model` and `--api-key`. The key stays yours: the translation calls go from your machine or your CI runner to the provider you chose, so nothing is routed through a third party. See the [fill command](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/fill.md).
+
+</Question>
+<Question title="Do I need to restart the dev server after changing the configuration?">
+
+Usually not. The Intlayer watcher watches `intlayer.config.ts` itself: on save it reloads the configuration and prepares the dictionaries again, so adding a locale or changing a routing mode is picked up like a content change. However the config may by cached by the systems. Restarting your app may be a good solution.
+
+</Question>
+
+</FAQ>

@@ -13,6 +13,7 @@ slugs:
   - concept
   - cli
   - editor
+author: aymericzip
 ---
 
 # Editor commands

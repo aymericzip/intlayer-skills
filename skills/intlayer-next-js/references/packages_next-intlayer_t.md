@@ -1,6 +1,6 @@
 ---
 createdAt: 2025-08-23
-updatedAt: 2025-08-23
+updatedAt: 2026-08-22
 title: t Function Documentation | next-intlayer
 description: See how to use the t function for next-intlayer package
 keywords:
@@ -19,22 +19,22 @@ slugs:
   - next-intlayer
   - t
 history:
+  - version: 9.4.0
+    date: 2026-08-22
+    changes: "Update to Next.js >= 9.4.0 architecture"
   - version: 5.5.10
     date: 2025-06-29
     changes: "Init history"
+author: aymericzip
 ---
 
 # Documentation: `t` Function in `next-intlayer`
 
 The `t` function in the `next-intlayer` package is a fundamental tool for inline internationalization within your Next.js application. It allows you to define translations directly within your components, making it simple to display localized content based on the current locale.
 
----
-
 ## Overview
 
 The `t` function is used to provide translations for different locales directly in your components. By passing an object containing translations for each supported locale, `t` returns the appropriate translation based on the current locale context in your Next.js application.
-
----
 
 ## Key Features
 
@@ -42,8 +42,6 @@ The `t` function is used to provide translations for different locales directly 
 - **Automatic Locale Selection**: Returns the translation corresponding to the current locale automatically.
 - **TypeScript Support**: Provides type safety and autocompletion when used with TypeScript.
 - **Easy Integration**: Works seamlessly within both client and server components in Next.js.
-
----
 
 ## Function Signature
 
@@ -58,8 +56,6 @@ t<T extends string>(content: Record<LocalesValues, T>, locale?: Locales): string
 ### Returns
 
 - A string representing the translated content for the current locale.
-
----
 
 ## Usage Examples
 
@@ -130,8 +126,6 @@ When localizing attributes like `alt`, `title`, `href`, or `aria-label`, you can
 </button>
 ```
 
----
-
 ## Advanced Topics
 
 ### TypeScript Integration
@@ -153,26 +147,45 @@ const greeting = t(translations);
 
 ### Locale Detection and Context
 
-In `next-intlayer`, the current locale is managed through context providers: `IntlayerClientProvider` and `IntlayerServerProvider`. Ensure these providers wrap your components and the `locale` prop is correctly passed.
+In `next-intlayer`, the current locale is managed through context providers: `IntlayerClientProvider` and `IntlayerServerProvider` (or just `IntlayerProvider` for Intlayer >= 9.4). Ensure these providers wrap your components and the `locale` prop is correctly passed.
 
 #### Example:
 
+<Tabs>
+ <Tab label='Intlayer >=9.4' value='>=9.4'>
+
 ```tsx codeFormat={["typescript", "esm", "commonjs"]}
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
+import type { Locales } from "intlayer";
+import { IntlayerProvider } from "next-intlayer/server";
+
+const Page: FC<{ locale: Locales; children: ReactNode }> = ({
+  locale,
+  children,
+}) => <IntlayerProvider locale={locale}>{children}</IntlayerProvider>;
+```
+
+ </Tab>
+ <Tab label='Intlayer <9.4' value='<9.4'>
+
+```tsx codeFormat={["typescript", "esm", "commonjs"]}
+import type { FC, ReactNode } from "react";
 import type { Locales } from "intlayer";
 import { IntlayerClientProvider } from "next-intlayer";
 import { IntlayerServerProvider } from "next-intlayer/server";
 
-const Page: FC<{ locale: Locales }> = ({ locale }) => (
+const Page: FC<{ locale: Locales; children: ReactNode }> = ({
+  locale,
+  children,
+}) => (
   <IntlayerServerProvider locale={locale}>
-    <IntlayerClientProvider locale={locale}>
-      {/* Your components here */}
-    </IntlayerClientProvider>
+    <IntlayerClientProvider locale={locale}>{children}</IntlayerClientProvider>
   </IntlayerServerProvider>
 );
 ```
 
----
+ </Tab>
+</Tabs>
 
 ## Common Errors and Troubleshooting
 
@@ -180,7 +193,7 @@ const Page: FC<{ locale: Locales }> = ({ locale }) => (
 
 - **Cause**: The current locale is not properly set, or the translation for the current locale is missing.
 - **Solution**:
-  - Verify that the `IntlayerClientProvider` or `IntlayerServerProvider` is correctly set up with the appropriate `locale`.
+  - Verify that the `IntlayerProvider` (or `IntlayerClientProvider`/`IntlayerServerProvider`) is correctly set up with the appropriate `locale`.
   - Ensure that your translations object includes all the necessary locales.
 
 ### Missing Translations in TypeScript
@@ -198,8 +211,6 @@ const translations: IConfigLocales<string> = {
 const text = t(translations);
 ```
 
----
-
 ## Tips for Effective Usage
 
 1. **Use `t` for Simple Inline Translations**: Ideal for translating small pieces of text directly within your components.
@@ -207,14 +218,10 @@ const text = t(translations);
 3. **Consistent Locale Provision**: Ensure that your locale is consistently provided across your application through the appropriate providers.
 4. **Leverage TypeScript**: Use TypeScript types to catch missing translations and ensure type safety.
 
----
-
 ## Conclusion
 
 The `t` function in `next-intlayer` is a powerful and convenient tool for managing inline translations in your Next.js applications. By integrating it effectively, you enhance the internationalization capabilities of your app, providing a better experience for users worldwide.
 
 For more detailed usage and advanced features, refer to the [next-intlayer documentation](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/intlayer_visual_editor.md).
 
----
-
-**Note**: Remember to set up your `IntlayerClientProvider` and `IntlayerServerProvider` properly to ensure that the current locale is correctly passed down to your components. This is crucial for the `t` function to return the correct translations.
+**Note**: Remember to set up your `IntlayerProvider` (or `IntlayerClientProvider` and `IntlayerServerProvider`) properly to ensure that the current locale is correctly passed down to your components. This is crucial for the `t` function to return the correct translations.

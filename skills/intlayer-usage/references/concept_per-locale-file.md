@@ -21,6 +21,7 @@ history:
   - version: 5.5.10
     date: 2025-06-29
     changes: "Init history"
+author: aymericzip
 ---
 
 # Declaration of `Per-Locale` Content Declaration in Intlayer

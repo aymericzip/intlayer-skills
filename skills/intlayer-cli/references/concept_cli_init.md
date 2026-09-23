@@ -1,6 +1,6 @@
 ---
 createdAt: 2025-12-30
-updatedAt: 2025-12-30
+updatedAt: 2026-09-21
 title: Initialize Intlayer
 description: Learn how to initialize Intlayer in your project.
 keywords:
@@ -14,12 +14,16 @@ slugs:
   - cli
   - init
 history:
+  - version: 9.5.6
+    date: 2026-09-21
+    changes: "Add init infra sub-command"
   - version: 8.6.4
     date: 2026-03-31
     changes: "Add --no-gitignore option"
   - version: 7.5.9
     date: 2025-12-30
     changes: "Add init command"
+author: aymericzip
 ---
 
 # Initialize Intlayer
@@ -50,6 +54,7 @@ The `init` command automatically sets up Intlayer in your project by configuring
 
 - `--project-root [projectRoot]` - Optional. Specify the project root directory. If not provided, the command will search for the project root starting from the current working directory.
 - `--no-gitignore` - Optional. Skip the automatic update of the `.gitignore` file. If this flag is set, `.intlayer` will not be added to `.gitignore`.
+- `-i, --interactive` - Optional. Pick the setup steps from a checklist (packages, CI, skills, MCP, compiler, infrastructure, …) instead of running the default set.
 
 ## What it does:
 
@@ -123,6 +128,26 @@ bun x intlayer init --no-gitignore
 ```
 
 This will set up all configuration files but will not modify your `.gitignore`.
+
+### Set up the infrastructure (desktop app or self-hosting):
+
+```bash
+npx intlayer init infra
+```
+
+Downloads and runs the hosted installer (`https://intlayer.org/install.sh`, or `install.ps1` on Windows), which asks how you want to run Intlayer:
+
+- **Desktop app** — installs the native dashboard on your machine, connected to the Intlayer Cloud.
+- **All-in-one Docker** — dashboard + API + MongoDB + Redis + MinIO in a single container.
+- **Docker Compose** — one container per service, for scalable self-hosting.
+
+Skip the menu with `--mode`:
+
+```bash
+npx intlayer init infra --mode compose
+```
+
+The same step is offered by `npx intlayer init --interactive`. See the [`init infra` reference](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/cli/infra.md) for the installer settings, and the [self-hosting guide](https://github.com/aymericzip/intlayer/blob/main/docs/docs/en/self_hosting.md) for what each mode sets up.
 
 ## Example output:
 

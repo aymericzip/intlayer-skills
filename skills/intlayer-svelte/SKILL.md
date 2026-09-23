@@ -73,12 +73,33 @@ In Svelte, `useIntlayer` returns a **store**. You must use the `$` prefix to acc
 </div>
 ```
 
+## Compiler
+
+The [Intlayer Compiler](references/compiler.md) can extract all your content keys from your components, using one CLI command (`npx intlayer extract`) or automatically at app build.
+
+It activates once `compiler.enabled` and `compiler.output` are set: `.svelte` files additionally require `@intlayer/svelte-compiler`.
+
 ## References
 
 - [Website](https://intlayer.org)
 - [Doc](https://intlayer.org/doc)
 
-- [Intlayer Exports](references/packages_intlayer_exports.md)
+### Environments
+
 - [Vite and Svelte](references/environment_vite-and-svelte.md)
 - [SvelteKit](references/environment_sveltekit.md)
+- [Astro and Svelte](references/environment_astro_svelte.md)
+
+### Concepts
+
+- [Variants](references/concept_variants.md)
+- [Collections](references/concept_collections.md)
+- [Compiler](references/compiler.md)
+- [Formatters (number, currency, date, …)](references/formatters.md)
+
+### Packages
+
+- [Intlayer Exports](references/packages_intlayer_exports.md)
 - [Svelte Intlayer Exports](references/packages_svelte-intlayer_exports.md)
+- [svelte-intlayer usePathname](references/packages_svelte-intlayer_usePathname.md)
+- [svelte-intlayer useRewriteURL](references/packages_svelte-intlayer_useRewriteURL.md)

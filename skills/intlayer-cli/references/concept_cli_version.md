@@ -12,6 +12,7 @@ slugs:
   - concept
   - cli
   - version
+author: aymericzip
 ---
 
 # Check CLI version

@@ -13,6 +13,7 @@ slugs:
   - concept
   - cli
   - debug
+author: aymericzip
 ---
 
 # Debug intlayer command

@@ -90,8 +90,8 @@ The [Intlayer Compiler](references/compiler.md) can extract all your content key
 - [Next.js 14](references/environment_nextjs_14.md)
 - [Next.js 15](references/environment_nextjs_15.md)
 - [Next.js with Page Router](references/environment_nextjs_next-with-page-router.md)
-- [Intlayer with next-intl](references/next-intl.md)
-- [Intlayer with next-i18next](references/next-i18next.md)
+- [Intlayer with next-intl](references/migration_next-intl.md)
+- [Intlayer with next-i18next](references/migration_next-i18next.md)
 
 ### Concepts
 
